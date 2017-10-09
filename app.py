@@ -1,12 +1,15 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
+from flask.ext.cache import Cache
 from bs4 import BeautifulSoup
 import urllib2
 import json
 import os
+import datetime
 
 app = Flask(__name__)
 api = Api(app)
+cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 '''
 scraping codechef and creating a dictionary for json object
@@ -62,6 +65,9 @@ key : 0ea5291d2d8b726c0b8c3aeb1b5288192f5db373
 secret : bad1aae399dafa014e3d9cc53a35c6a3c2ace9df
 '''
 
+def posix_to_normal(time):
+    return datetime.datetime.fromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
+
 url = 'http://codeforces.com/api/contest.list'
 page = urllib2.urlopen(url)
 data = json.load(page)
@@ -72,8 +78,8 @@ for event in allevents:
     if(event["phase"] == "BEFORE"):
         code = event["id"]
         name = event["name"]
-        start_time = event["startTimeSeconds"]
-        end_time = event["durationSeconds"]
+        start_time = posix_to_normal(int(event["startTimeSeconds"]))
+        end_time = posix_to_normal(int(event["startTimeSeconds"]) + int(event["durationSeconds"]))
         platform = "codeforces"
         contest_url = 'http://codeforces.com/contest/' + str(code)
         resultSet["upcoming_contests"].append({"code":code,"platform":platform,"name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
@@ -115,6 +121,7 @@ for event in allevents:
 
 
 class TodoSimple(Resource):
+    @cache.cached(timeout=900)  #caching for 15 minutes
     def get(self):
         return {"result": resultSet}
     
