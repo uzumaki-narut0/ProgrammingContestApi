@@ -1,132 +1,57 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 from flask.ext.cache import Cache
-from bs4 import BeautifulSoup
-import urllib2
-import json
 import os
-import datetime
+import make_api
 
 app = Flask(__name__)
 api = Api(app)
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
-'''
-scraping codechef and creating a dictionary for json object
-'''
-
-url = 'https://www.codechef.com/contests'
-page = urllib2.urlopen(url)
-soup = BeautifulSoup(page,"html.parser")
-
-result = []
 resultSet = {"present_contests":[],"upcoming_contests":[]}
-tableList = soup.findAll("table",attrs = {"class":"dataTable"})  #listofAllLinks
 
-contestTypes = soup.findAll("h3");
-
-i = 0
-present_contests = []
-upcoming_contests = []
-for contest in contestTypes:
-    if(contest.get_text() == 'Present Contests'):
-        present_contests = tableList[i].findAll("tr")
-    elif(contest.get_text() == 'Future Contests'):
-        upcoming_contests = tableList[i].findAll("tr")
-    i = i+1
-
-
-#present_contests = tableList[0].findAll("tr")  #present contests
-if(len(present_contests) > 0 ):
-    for contest in present_contests[1:]:
-        event_details_row = contest.findAll("td")
-        code = event_details_row[0].string
-        name = event_details_row[1].string
-        start_time = event_details_row[2].string
-        end_time = event_details_row[3].string
-        contest_url = "www.codechef.com/" + code
-        resultSet["present_contests"].append({"code":code,"platform":"codechef","name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
-
-
-#upcoming_contests = tableList[1].findAll("tr")  #upcoming contests
-if(len(upcoming_contests) > 0 ):
-    for contest in upcoming_contests[1:]:
-        event_details_row = contest.findAll("td")
-        code = event_details_row[0].string
-        name = event_details_row[1].string
-        start_time = event_details_row[2].string
-        end_time = event_details_row[3].string
-        contest_url = "www.codechef.com/" + code
-        resultSet["upcoming_contests"].append({"code":code,"platform":"codechef","name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
-    
-'''
-adding codeforces events without scraping using Codeforces api
-key : 0ea5291d2d8b726c0b8c3aeb1b5288192f5db373
-secret : bad1aae399dafa014e3d9cc53a35c6a3c2ace9df
-'''
-
-def posix_to_normal(time):
-    return datetime.datetime.fromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
-
-url = 'http://codeforces.com/api/contest.list'
-page = urllib2.urlopen(url)
-data = json.load(page)
-allevents = data["result"]
-for event in allevents:
-    if(event["phase"] == "FINISHED"):
-        break
-    if(event["phase"] == "BEFORE"):
-        code = event["id"]
-        name = event["name"]
-        start_time = posix_to_normal(int(event["startTimeSeconds"]))
-        end_time = posix_to_normal(int(event["startTimeSeconds"]) + int(event["durationSeconds"]))
-        platform = "codeforces"
-        contest_url = 'http://codeforces.com/contest/' + str(code)
-        resultSet["upcoming_contests"].append({"code":code,"platform":platform,"name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
-    else:
-        code = event["id"]
-        name = event["name"]
-        start_time = event["startTimeSeconds"]
-        end_time = event["durationSeconds"]
-        platform = "codeforces"
-        contest_url = 'http://codeforces.com/contest/' + str(code)
-        resultSet["present_contests"].append({"code":code,"platform":platform,"name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
-
-'''
-adding HackerEarth events using Hackerearth Chrome Extension URL which returns a JSON object
-url : "https://www.hackerearth.com/chrome-extension/events/"
-'''
-
-url = "https://www.hackerearth.com/chrome-extension/events/"
-page = urllib2.urlopen(url)
-data = json.load(page)
-allevents = data["response"]
-for event in allevents:
-    if(event["status"] == "UPCOMING"):
-        code = event["challenge_type"]
-        name = event["title"]
-        start_time = event["start_timestamp"]
-        end_time = event["end_timestamp"]
-        platform = "hackerearth"
-        contest_url = event["url"]
-        resultSet["upcoming_contests"].append({"code":code,"platform":platform,"name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
-    else:
-        code = event["challenge_type"]
-        name = event["title"]
-        start_time = event["start_timestamp"]
-        end_time = event["end_timestamp"]
-        platform = "hackerearth"
-        contest_url = event["url"]
-        resultSet["present_contests"].append({"code":code,"platform":platform,"name":name,"start_time":start_time,"end_time":end_time,"contest_url":contest_url})
-
-
-class TodoSimple(Resource):
+class ContestTracker(Resource):
     @cache.cached(timeout=900)  #caching for 15 minutes
     def get(self):
+        make_api.make_api(resultSet);
         return {"result": resultSet}
-    
 
-api.add_resource(TodoSimple, '/')
+class ContestTrackerWithQueryLimit(Resource):
+    @cache.cached(timeout=900)  #caching for 15 minutes
+    def get(self, querylimit):
+        assert (str(type(querylimit)) == "<type 'int'>"),type(querylimit)
+        make_api.make_api(resultSet);
+        if(querylimit <= len(resultSet["present_contests"])):
+            resultSet["present_contests"] = resultSet["present_contests"][:querylimit]
+        if(querylimit <= len(resultSet["upcoming_contests"])):
+            resultSet["upcoming_contests"] = resultSet["upcoming_contests"][:querylimit]
+        return {"result": resultSet}
+
+class UpcomingContestTracker(Resource):
+    @cache.cached(timeout=900)  #caching for 15 minutes
+    def get(self, querylimit):
+        assert (str(type(querylimit)) == "<type 'int'>"),type(querylimit)
+        make_api.make_api(resultSet);
+        if(querylimit <= len(resultSet["upcoming_contests"])):
+            return {"result": resultSet["upcoming_contests"][:querylimit]}
+        else:
+            return {"result":resultSet}
+
+class PresentContestTracker(Resource):
+    @cache.cached(timeout=900)  #caching for 15 minutes
+    def get(self, querylimit):
+        assert (str(type(querylimit)) == "<type 'int'>"),type(querylimit)
+        make_api.make_api(resultSet);
+        if(querylimit <= len(resultSet["present_contests"])):
+            return {"result": resultSet["present_contests"][:querylimit]}
+        else:
+            return {"result": resultSet }
+
+    
+api.add_resource(ContestTracker, '/')
+api.add_resource(ContestTrackerWithQueryLimit, '/<int:querylimit>')
+api.add_resource(UpcomingContestTracker, '/upcoming/<int:querylimit>')
+api.add_resource(PresentContestTracker, '/present/<int:querylimit>')
 
 
 port = int(os.environ.get("PORT", 5000))

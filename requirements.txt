@@ -1,4 +1,8 @@
-flask
-flask_restful
+Flask==0.12
+flask_restful==0.3.5
 Flask-Cache
 bs4
+soccer-cli
+Jinja2
+Werkzeug
+wsgiref
