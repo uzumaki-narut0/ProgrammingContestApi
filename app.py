@@ -1,6 +1,6 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-from flask.ext.cache import Cache
+from flask_cache import Cache
 import os
 import make_api
 
