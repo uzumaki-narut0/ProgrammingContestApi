@@ -55,27 +55,6 @@ A restful API constructed using flask_restful which returns all ongoing and upco
  
    `count=[integer]`
 
-* **Success Response:**
-
-  * **Code:** 200 <br />
-    **Content:** `{"result": {"present_contests": [{"end_time": "2018-01-05 00:00:00", "name": "ZCO Practice Contest", "code": "ZCOPRAC", "start_time": "2015-11-05 00:00:00", "platform": "codechef", "contest_url": "www.codechef.com/ZCOPRAC"}], "upcoming_contests": [{"end_time": "2017-10-16 13:05:00", "name": "Codeforces Round #441 (Div. 1, by Moscow Team Olympiad)", "code": 875, "start_time": "2017-10-16 11:05:00", "platform": "codeforces", "contest_url": "http://codeforces.com/contest/875"}]}}`
- 
-* **Error Response:**
-
-  * **Code:** 404 NOT FOUND <br />
-  
-* **Sample Call:**
-
-  ```javascript
-    $.ajax({
-      url: "https://tranquil-caverns-50595.herokuapp.com/1",
-      dataType: "json",
-      type : "GET",
-      success : function(r) {
-        console.log(r);
-      }
-    });
-  ```
 **Fetching only upcoming Contest Details**
 ----
   The number of contests returned is based on the query parameter.
@@ -93,28 +72,6 @@ A restful API constructed using flask_restful which returns all ongoing and upco
  
    `count=[integer]`
 
-* **Success Response:**
-
-  * **Code:** 200 <br />
-    **Content:** `{"result": [{"end_time": "2017-10-16 13:05:00", "name": "Codeforces Round #441 (Div. 1, by Moscow Team Olympiad)", "code": 875, "start_time": "2017-10-16 11:05:00", "platform": "codeforces", "contest_url": "http://codeforces.com/contest/875"}]}`
- 
-* **Error Response:**
-
-  * **Code:** 404 NOT FOUND <br />
-  
-* **Sample Call:**
-
-  ```javascript
-    $.ajax({
-      url: "https://tranquil-caverns-50595.herokuapp.com/upcoming/1",
-      dataType: "json",
-      type : "GET",
-      success : function(r) {
-        console.log(r);
-      }
-    });
-  ```
-
 **Fetching only present Contest Details**
 ----
   The number of contests returned is based on the query parameter.
@@ -131,25 +88,3 @@ A restful API constructed using flask_restful which returns all ongoing and upco
    **Required:**
  
    `count=[integer]`
-
-* **Success Response:**
-
-  * **Code:** 200 <br />
-    **Content:** `{"result": [{"end_time": "2018-01-05 00:00:00", "name": "ZCO Practice Contest", "code": "ZCOPRAC", "start_time": "2015-11-05 00:00:00", "platform": "codechef", "contest_url": "www.codechef.com/ZCOPRAC"}]}`
- 
-* **Error Response:**
-
-  * **Code:** 404 NOT FOUND <br />
-  
-* **Sample Call:**
-
-  ```javascript
-    $.ajax({
-      url: "https://tranquil-caverns-50595.herokuapp.com/present/1",
-      dataType: "json",
-      type : "GET",
-      success : function(r) {
-        console.log(r);
-      }
-    });
-  ```
